@@ -1,10 +1,10 @@
-IDEL Cotation - PWA
+IDEL Cotation - PWA v2
 
-Installation locale rapide :
-1. Héberger le contenu de ce dossier sur un serveur HTTPS.
-2. Ouvrir l'adresse depuis Safari (iPhone) ou Chrome (Android).
-3. iPhone : Partager > Sur l'écran d'accueil.
-4. Android : menu du navigateur > Installer l'application.
+Nouveautés :
+- Ajout de patients avec nom, valeur et cotation.
+- Suppression de patients.
+- Export du bilan mensuel en fichier Excel compatible (.xls).
+- L'export contient un onglet Bilan mensuel et un onglet Patients.
+- La rétrocession de 10 % est calculée uniquement sur les soins.
 
-Les données sont stockées localement dans le navigateur de l'appareil.
-La rétrocession de 10 % est calculée uniquement sur les soins, hors Passages, Dim/JFériés et BS.
+Les données restent stockées localement dans le navigateur de l'appareil.

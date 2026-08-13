@@ -47,6 +47,29 @@
         <div id="patientsList" class="patients"></div>
       </section>
 
+      <section class="card">
+        <div class="section-title">
+          <h2>Patients</h2>
+          <button id="showAddPatient" class="ghost small">+ Ajouter</button>
+        </div>
+        <div id="addPatientForm" class="patient-form" hidden>
+          <label>Nom
+            <input id="newPatientName" type="text" placeholder="Nom du patient">
+          </label>
+          <label>Valeur (€)
+            <input id="newPatientValue" type="number" step="0.001" min="0" placeholder="0,00">
+          </label>
+          <label>Cotation
+            <input id="newPatientCotation" type="text" placeholder="Ex. AMI 1,2">
+          </label>
+          <div class="form-actions">
+            <button id="cancelAddPatient" class="ghost">Annuler</button>
+            <button id="addPatient" class="primary">Ajouter</button>
+          </div>
+        </div>
+        <p class="note">Utilise l’icône corbeille à droite d’un patient pour le supprimer de la liste.</p>
+      </section>
+
       <section class="card extras">
         <h2>Compléments</h2>
 
@@ -86,7 +109,10 @@
 
     <section id="monthTab" hidden>
       <section class="card">
-        <h2>Bilan mensuel</h2>
+        <div class="section-title">
+          <h2>Bilan mensuel</h2>
+          <button id="exportExcel" class="ghost small">Exporter Excel</button>
+        </div>
         <div class="bilan">
           <div><span>Total soins</span><strong id="monthCare">0,00 €</strong></div>
           <div><span>Passages</span><strong id="monthPassages">0,00 €</strong></div>
