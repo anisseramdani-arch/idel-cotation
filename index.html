@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>IDEL Cotation</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>IDEL Cotation</h1>
+      <p>Suivi quotidien et bilan mensuel</p>
+    </div>
+    <button id="installBtn" class="ghost" hidden>Installer</button>
+  </header>
+
+  <main>
+    <section class="controls card">
+      <label>Mois
+        <select id="monthSelect"></select>
+      </label>
+      <label>Jour
+        <select id="daySelect"></select>
+      </label>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="day">Journée</button>
+      <button class="tab" data-tab="month">Bilan du mois</button>
+    </nav>
+
+    <section id="dayTab">
+      <div class="summary-grid">
+        <div class="metric card"><span>Soins</span><strong id="careTotal">0,00 €</strong></div>
+        <div class="metric card"><span>Total journée</span><strong id="dayTotal">0,00 €</strong></div>
+      </div>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Soins</h2>
+          <button id="uncheckAll" class="ghost small">Tout décocher</button>
+        </div>
+        <div id="patientsList" class="patients"></div>
+      </section>
+
+      <section class="card extras">
+        <h2>Compléments</h2>
+
+        <div class="extra-row">
+          <div>
+            <strong>Passages</strong>
+            <small>Nombre de soins cochés × 2,75 €</small>
+          </div>
+          <div class="extra-value" id="passagesValue">0,00 €</div>
+        </div>
+
+        <div class="extra-row">
+          <label class="switch-label">
+            <input type="checkbox" id="dimCheck">
+            <span>Dim / JFériés</span>
+          </label>
+          <div>
+            <small>Si coché : nombre de soins cochés × 8,50 €</small>
+            <div class="extra-value" id="dimValue">0,00 €</div>
+          </div>
+        </div>
+
+        <div class="extra-row">
+          <div>
+            <strong>BS</strong>
+            <small>0 à 5 × 8,83 €</small>
+          </div>
+          <div class="stepper">
+            <button id="bsMinus">−</button>
+            <span id="bsCount">0</span>
+            <button id="bsPlus">+</button>
+          </div>
+          <div class="extra-value" id="bsValue">0,00 €</div>
+        </div>
+      </section>
+    </section>
+
+    <section id="monthTab" hidden>
+      <section class="card">
+        <h2>Bilan mensuel</h2>
+        <div class="bilan">
+          <div><span>Total soins</span><strong id="monthCare">0,00 €</strong></div>
+          <div><span>Passages</span><strong id="monthPassages">0,00 €</strong></div>
+          <div><span>Dim / JFériés</span><strong id="monthDim">0,00 €</strong></div>
+          <div><span>BS</span><strong id="monthBs">0,00 €</strong></div>
+          <div class="total"><span>Total brut</span><strong id="monthGross">0,00 €</strong></div>
+          <div><span>Rétrocession 10 %</span><strong id="retro">0,00 €</strong></div>
+          <p class="note">La rétrocession est calculée uniquement sur le total des soins, hors Passages, Dim/JFériés et BS.</p>
+          <div class="net"><span>Total après rétrocession</span><strong id="monthNet">0,00 €</strong></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Détail par jour</h2>
+        <div class="day-table-wrap">
+          <table>
+            <thead><tr><th>Jour</th><th>Soins</th><th>Compléments</th><th>Total</th></tr></thead>
+            <tbody id="monthRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>Les données restent enregistrées localement sur cet appareil.</footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
