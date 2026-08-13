@@ -1,10 +1,11 @@
-IDEL Cotation - PWA v2
+IDEL Cotation - PWA v3
 
-Nouveautés :
-- Ajout de patients avec nom, valeur et cotation.
-- Suppression de patients.
-- Export du bilan mensuel en fichier Excel compatible (.xls).
-- L'export contient un onglet Bilan mensuel et un onglet Patients.
-- La rétrocession de 10 % est calculée uniquement sur les soins.
+Correctif :
+- Forçage de la mise à jour de app.js/styles.css/data.js.
+- Suppression automatique des anciens caches PWA.
+- Bouton + Ajouter et suppression patient actifs.
+- Export Excel conservé.
+- Rétrocession 10 % uniquement sur les soins.
 
-Les données restent stockées localement dans le navigateur de l'appareil.
+Après déploiement GitHub Pages, recharger une fois la page.
+Le pied de page doit afficher "Version 3".
