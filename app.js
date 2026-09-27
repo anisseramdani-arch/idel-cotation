@@ -238,7 +238,7 @@ function exportExcel(){
   const rows3=`<Row>${cell('Jour','String','Header')}${cell('Ligne','String','Header')}${cell('Patient / détail','String','Header')}${cell('Cotation / tarif','String','Header')}${cell('Quantité','String','Header')}${cell('Valeur unitaire','String','Header')}${cell('Total','String','Header')}</Row>${detailedRows.join('')}`;
   const zebra = rows => {
     let index=0;
-    return rows.replace(/<Row(.*?)>(.*?)<\\/Row>/g, (match, attrs, body) => {
+    return rows.replace(/<Row(.*?)>(.*?)<\/Row>/g, (match, attrs, body) => {
       const current=index++;
       if(current%2===0) return match;
       const styled=body.replace(/<Cell(?![^>]*ss:StyleID=)([^>]*)>/g,
@@ -248,9 +248,9 @@ function exportExcel(){
     });
   };
   rows1 = zebra(rows1);
-  rows1 = rows1.replace(/<Row><Cell><Data ss:Type="String">Total brut<\\/Data><\\/Cell><Cell ss:StyleID="Money">/g,
+  rows1 = rows1.replace(/<Row><Cell><Data ss:Type="String">Total brut<\/Data><\/Cell><Cell ss:StyleID="Money">/g,
     '<Row><Cell ss:StyleID="Total"><Data ss:Type="String">Total brut</Data></Cell><Cell ss:StyleID="TotalMoney">');
-  rows1 = rows1.replace(/<Row><Cell><Data ss:Type="String">Total après rétrocession<\\/Data><\\/Cell><Cell ss:StyleID="Money">/g,
+  rows1 = rows1.replace(/<Row><Cell><Data ss:Type="String">Total après rétrocession<\/Data><\/Cell><Cell ss:StyleID="Money">/g,
     '<Row><Cell ss:StyleID="Total"><Data ss:Type="String">Total après rétrocession</Data></Cell><Cell ss:StyleID="TotalMoney">');
   rows2 = zebra(rows2);
   const rows3Styled = zebra(rows3);
