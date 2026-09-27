@@ -235,22 +235,29 @@ function exportExcel(){
 
   let rows2 = `<Row>${cell('Patient','String','Header')}${cell('Cotation','String','Header')}${cell('Valeur','String','Header')}${cell('Nombre de jours','String','Header')}${cell('Total soins','String','Header')}</Row>`;
   ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(Number(p.value),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });
-  const detailDays = Array.from({length:daysInMonth(month)},(_,i)=>i+1);
+  const detailDays = Array.from({length:daysInMonth(month)},(_,i)=>i+1)
+    .filter(d=>{
+      const day=ensureDay(month,String(d));
+      const pd=parts(day);
+      return pd.count>0 || pd.night>0 || pd.dim>0 || pd.bs>0;
+    });
   const detailRows = [];
-  detailRows.push(`<Row>${cell('Soins / patient','String','Header')}${cell('Cotation','String','Header')}${detailDays.map(d=>cell(String(d),'String','Header')).join('')}</Row>`);
+  detailRows.push(`<Row>${cell('Patients','String','Header')}${cell('Valeur','String','Header')}${cell('Cotation soins','String','Header')}${detailDays.map(d=>cell(String(d),'String','Header')).join('')}${cell('Nombre de jours','String','Header')}${cell('Total','String','Header')}</Row>`);
   ps.forEach((p,i)=>{
+    const daysWithCare=detailDays.filter(d=>isChecked(ensureDay(month,String(d)),p,i));
     const values=detailDays.map(d=>{
       const day=ensureDay(month,String(d));
-      return isChecked(day,p,i)?cell(Number(p.value),'Number','Money'):'<Cell><Data ss:Type="String"></Data></Cell>';
+      return isChecked(day,p,i)?cell('✓','String','Check'):'<Cell><Data ss:Type="String"></Data></Cell>';
     }).join('');
-    if(detailDays.some(d=>isChecked(ensureDay(month,String(d)),p,i))){
-      detailRows.push(`<Row>${cell(p.name)}${cell(p.cotation||'')}${values}</Row>`);
+    detailRows.push(`<Row>${cell(p.name)}${cell(Number(p.value),'Number','Money')}${cell(p.cotation||'')}${values}${cell(daysWithCare.length,'Number')}${cell(totals[i],'Number','Money')}</Row>`);
+    if(daysWithCare.some(d=>!!ensureDay(month,String(d)).night[p.id])){
+      // Night surcharge is reported in the summary below, not duplicated in patient care totals.
     }
   });
   const extraRows = [
     ['Majoration nuit', d=>parts(ensureDay(month,String(d))).night],
     ['Passages', d=>parts(ensureDay(month,String(d))).passages],
-    ['Dimanche / jours fériés', d=>parts(ensureDay(month,String(d))).dim],
+    ['Dim / JF', d=>parts(ensureDay(month,String(d))).dim],
     ['BS', d=>parts(ensureDay(month,String(d))).bs],
     ['TOTAL JOURNALIER', d=>parts(ensureDay(month,String(d))).total]
   ];
@@ -259,10 +266,11 @@ function exportExcel(){
       const v=getValue(d);
       return v ? cell(v,'Number',idx===4?'TotalMoney':'Money') : '<Cell><Data ss:Type="String"></Data></Cell>';
     }).join('');
-    detailRows.push(`<Row>${cell(label,'String',idx===4?'Total':'')}${cell('', 'String',idx===4?'Total':'')}${values}</Row>`);
+    const special=idx===4?'Total':'';
+    detailRows.push(`<Row>${cell(label,'String',special)}${cell('', 'String',special)}${cell('', 'String',special)}${values}${cell('', 'String',special)}${cell('', 'String',special)}</Row>`);
   });
   const rows3=detailRows.join('');
-  const detailColumns='<Column ss:Width="180"/><Column ss:Width="90"/>'+detailDays.map(()=>'<Column ss:Width="68"/>').join('');
+  const detailColumns='<Column ss:Width="150"/><Column ss:Width="65"/><Column ss:Width="110"/>'+detailDays.map(()=>'<Column ss:Width="38"/>').join()+'<Column ss:Width="78"/><Column ss:Width="78"/>';
   const zebra = rows => {
     let index=0;
     return rows.replace(/<Row(.*?)>(.*?)<\/Row>/g, (match, attrs, body) => {
@@ -292,6 +300,7 @@ function exportExcel(){
   <Style ss:ID="Header"><Font ss:Bold="1" ss:Size="14"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>
   <Style ss:ID="Title"><Font ss:Bold="1" ss:Size="18" ss:Color="#1F4E78"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style>
   <Style ss:ID="Alt"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="Check"><Font ss:Bold="1" ss:Color="#008000"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
   <Style ss:ID="AltMoney"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
   <Style ss:ID="Total"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/></Style>
   <Style ss:ID="TotalMoney"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
