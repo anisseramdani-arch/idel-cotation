@@ -220,7 +220,7 @@ function exportExcel(){
     if(pday.bs>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('BS')}${cell('Nombre de BS')}${cell('8,83 €')}${cell(pday.bs,'Number')}${cell(APP_DATA.rates.bs,'Number','Money')}${cell(pday.bs*APP_DATA.rates.bs,'Number','Money')}</Row>`);
   }
   let rows1 = '';
-  rows1 += `<Row>${cell('BILAN DU MOIS','String','Header')}${cell(month,'String','Header')}</Row>`;
+  rows1 += `<Row>${cell('BILAN DU MOIS','String','Title')}${cell(month,'String','Header')}</Row>`;
   rows1 += `<Row>${cell('Total soins')}${cell(m.care,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Passages')}${cell(m.passages,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Majorations nuit')}${cell(m.night,'Number','Money')}</Row>`;
@@ -238,12 +238,20 @@ function exportExcel(){
   const rows3=`<Row>${cell('Jour','String','Header')}${cell('Ligne','String','Header')}${cell('Patient / détail','String','Header')}${cell('Cotation / tarif','String','Header')}${cell('Quantité','String','Header')}${cell('Valeur unitaire','String','Header')}${cell('Total','String','Header')}</Row>${detailedRows.join('')}`;
   const zebra = rows => {
     let index=0;
-    return rows.replace(/<Row(.*?)>/g, (match, attrs) => {
-      const n=index++;
-      return `<Row${attrs}${n%2===1?' ss:StyleID="Alt"':''}>`;
+    return rows.replace(/<Row(.*?)>(.*?)<\\/Row>/g, (match, attrs, body) => {
+      const current=index++;
+      if(current%2===0) return match;
+      const styled=body.replace(/<Cell(?![^>]*ss:StyleID=)([^>]*)>/g,
+        '<Cell ss:StyleID="Alt"$1>');
+      const money=styled.replace(/<Cell ss:StyleID="Money"/g,'<Cell ss:StyleID="AltMoney"');
+      return `<Row${attrs}>${money}</Row>`;
     });
   };
   rows1 = zebra(rows1);
+  rows1 = rows1.replace(/<Row><Cell><Data ss:Type="String">Total brut<\\/Data><\\/Cell><Cell ss:StyleID="Money">/g,
+    '<Row><Cell ss:StyleID="Total"><Data ss:Type="String">Total brut</Data></Cell><Cell ss:StyleID="TotalMoney">');
+  rows1 = rows1.replace(/<Row><Cell><Data ss:Type="String">Total après rétrocession<\\/Data><\\/Cell><Cell ss:StyleID="Money">/g,
+    '<Row><Cell ss:StyleID="Total"><Data ss:Type="String">Total après rétrocession</Data></Cell><Cell ss:StyleID="TotalMoney">');
   rows2 = zebra(rows2);
   const rows3Styled = zebra(rows3);
   const xml=`<?xml version="1.0"?>
@@ -254,7 +262,12 @@ function exportExcel(){
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
  <Styles>
   <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Bottom"/></Style>
-  <Style ss:ID="Header"><Font ss:Bold="1" ss:Size="12"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>
+  <Style ss:ID="Header"><Font ss:Bold="1" ss:Size="14"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>
+  <Style ss:ID="Title"><Font ss:Bold="1" ss:Size="18" ss:Color="#1F4E78"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="Alt"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="AltMoney"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
+  <Style ss:ID="Total"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="TotalMoney"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
   <Style ss:ID="Alt"><Interior ss:Color="#F2F6FA" ss:Pattern="Solid"/></Style>
   <Style ss:ID="Money"><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
  </Styles>
