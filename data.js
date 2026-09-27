@@ -202,7 +202,8 @@ const APP_DATA = {
   "rates": {
     "passages": 2.75,
     "dim": 8.5,
-    "bs": 8.83
+    "bs": 8.83,
+    "night": 9.15
   },
   "retrocessionRate": 0.1
 };

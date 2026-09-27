@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const money = n => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(n||0);
 const key = 'idel-pwa-v1';
 
-const monthSelect = $('#monthSelect'), daySelect = $('#daySelect');
+const monthSelect = $('#monthSelect'), yearSelect = $('#yearSelect'), daySelect = $('#daySelect');
 const patientsList = $('#patientsList');
 let state = JSON.parse(localStorage.getItem(key) || '{}');
 
@@ -17,9 +17,12 @@ function patients(){
   }
   return state._patients;
 }
+const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+function monthLabel(){ return `${monthSelect.value} ${yearSelect.value}`; }
 function daysInMonth(label){
-  const m = label.split(' ')[0].toLowerCase();
-  return ['avril','juin','septembre','novembre'].includes(m) ? 30 : 31;
+  const [monthName, yearText] = label.split(' ');
+  const monthIndex = MONTHS.indexOf(monthName);
+  return monthIndex < 0 ? 31 : new Date(Number(yearText), monthIndex + 1, 0).getDate();
 }
 function ensureMonth(month){
   if(!state[month]) state[month] = {};
@@ -43,22 +46,29 @@ function setChecked(day,p,index,val){
 }
 
 function setupSelectors(){
-  APP_DATA.months.forEach(m=>{
-    const o=document.createElement('option');o.value=m.label;o.textContent=m.label;monthSelect.appendChild(o);
+  MONTHS.forEach(m=>{
+    const o=document.createElement('option');o.value=m;o.textContent=m;monthSelect.appendChild(o);
   });
-  monthSelect.addEventListener('change',()=>{fillDays();render();});
+  for(let y=2026;y<=2030;y++){
+    const o=document.createElement('option');o.value=String(y);o.textContent=String(y);yearSelect.appendChild(o);
+  }
+  monthSelect.value='Janvier';
+  yearSelect.value='2026';
+  const refresh=()=>{fillDays();render();};
+  monthSelect.addEventListener('change',refresh);
+  yearSelect.addEventListener('change',refresh);
   daySelect.addEventListener('change',render);
   fillDays();
 }
 function fillDays(){
   const current = daySelect.value || '1';
   daySelect.innerHTML='';
-  const n=daysInMonth(monthSelect.value);
+  const n=daysInMonth(monthLabel());
   for(let d=1;d<=n;d++){const o=document.createElement('option');o.value=d;o.textContent=d;daySelect.appendChild(o);}
   daySelect.value = Math.min(Number(current),n);
 }
 
-function current(){return ensureDay(monthSelect.value, daySelect.value);}
+function current(){return ensureDay(monthLabel(), daySelect.value);}
 
 function careCount(day){return patients().filter((p,i)=>isChecked(day,p,i)).length;}
 function careTotal(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i)?Number(p.value):0),0);}
@@ -133,7 +143,7 @@ function monthly(month){
   return {care,passages,night,dim,bs,gross,retro,net:gross-retro,rows};
 }
 function renderMonth(){
-  const m=monthly(monthSelect.value);
+  const m=monthly(monthLabel());
   $('#monthCare').textContent=money(m.care);
   $('#monthPassages').textContent=money(m.passages);
   $('#monthNight').textContent=money(m.night);
@@ -184,7 +194,7 @@ function cell(v,type='String',style=''){
   return `<Cell${style?` ss:StyleID="${style}"`:''}><Data ss:Type="${type}">${xmlEscape(v)}</Data></Cell>`;
 }
 function exportExcel(){
-  const month=monthSelect.value, m=monthly(month);
+  const month=monthLabel(), m=monthly(month);
   const ps=patients();
   const counts=ps.map(()=>0), totals=ps.map(()=>0);
   for(let d=1;d<=daysInMonth(month);d++){
