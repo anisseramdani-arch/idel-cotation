@@ -48,3 +48,9 @@ footer{text-align:center;padding:20px;color:#73827f;font-size:.78rem}
 
 .edit-patient{border:0;background:#eaf3ff;color:#1d4e89;width:34px;height:34px;border-radius:9px;font-size:1rem}
 @media(max-width:700px){.patient{grid-template-columns:auto 1fr auto auto auto}.edit-patient{grid-column:4;grid-row:1}.delete-patient{grid-column:5;grid-row:1}.night-option{grid-column:2/4;grid-row:2}.patient .price{grid-column:2;grid-row:1}}
+
+.passage-option{display:flex;align-items:center;gap:5px;font-size:.76rem;color:#5c6f6b;font-weight:600;white-space:nowrap}
+.passage-option input{width:18px;height:18px;margin:0}
+.passage-option input:disabled{opacity:.45}
+@media(min-width:701px){.patient{grid-template-columns:auto minmax(120px,1fr) auto auto auto auto auto}}
+@media(max-width:700px){.patient{grid-template-columns:auto 1fr auto auto}.night-option,.passage-option{grid-column:2/5;grid-row:auto;justify-self:start}.patient .price{grid-column:2;grid-row:1}.edit-patient{grid-column:3;grid-row:1}.delete-patient{grid-column:4;grid-row:1}}

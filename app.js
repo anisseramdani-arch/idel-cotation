@@ -29,10 +29,11 @@ function ensureMonth(month){
 }
 function ensureDay(month, day){
   ensureMonth(month);
-  if(!state[month][day]) state[month][day] = {care:{}, night:{}, dim:false, bs:0};
+  if(!state[month][day]) state[month][day] = {care:{}, night:{}, skipPassage:{}, dim:false, bs:0};
   const d=state[month][day];
   if(!d.care) d.care={};
   if(!d.night) d.night={};
+  if(!d.skipPassage) d.skipPassage={};
   return d;
 }
 function save(){ localStorage.setItem(key, JSON.stringify(state)); }
@@ -76,10 +77,11 @@ function current(){return ensureDay(monthLabel(), daySelect.value);}
 function careCount(day){return patients().filter((p,i)=>isChecked(day,p,i)).length;}
 function careTotal(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i)?Number(p.value):0),0);}
 function nightCount(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i) && !!day.night[p.id] ? 1 : 0),0);}
+function passageCount(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i) && !day.skipPassage[p.id] ? 1 : 0),0);}
 function parts(day){
   const count=careCount(day);
   const care=careTotal(day);
-  const passages=count*APP_DATA.rates.passages;
+  const passages=passageCount(day)*APP_DATA.rates.passages;
   const night=nightCount(day)*APP_DATA.rates.night;
   const dim=day.dim ? count*APP_DATA.rates.dim : 0;
   const bs=(day.bs||0)*APP_DATA.rates.bs;
@@ -98,10 +100,15 @@ function renderPatients(day){
     const nightText=document.createElement('span'); nightText.textContent='Majoration nuit +9,15 €';
     nightWrap.append(night,nightText);
     night.addEventListener('change',()=>{day.night[p.id]=night.checked;save();renderTotals();renderMonth();});
+    const skipWrap=document.createElement('label');skipWrap.className='passage-option';
+    const skip=document.createElement('input');skip.type='checkbox';skip.checked=!!day.skipPassage[p.id];skip.disabled=!c.checked;
+    const skipText=document.createElement('span');skipText.textContent='Ne pas compter le passage';
+    skipWrap.append(skip,skipText);
+    skip.addEventListener('change',()=>{day.skipPassage[p.id]=skip.checked;save();renderTotals();renderMonth();});
     c.addEventListener('change',()=>{
       setChecked(day,p,i,c.checked);
-      if(!c.checked){ day.night[p.id]=false; night.checked=false; night.disabled=true; }
-      else { night.disabled=false; }
+      if(!c.checked){ day.night[p.id]=false; night.checked=false; night.disabled=true; skip.disabled=true; }
+      else { night.disabled=false; skip.disabled=false; }
       save();renderTotals();renderMonth();
     });
     const pr=document.createElement('div');pr.className='price';pr.textContent=money(Number(p.value));
@@ -109,7 +116,7 @@ function renderPatients(day){
     edit.addEventListener('click',()=>editPatient(p.id));
     const del=document.createElement('button');del.className='delete-patient';del.type='button';del.title='Supprimer';del.textContent='🗑';
     del.addEventListener('click',()=>deletePatient(p.id,p.name));
-    row.append(c,txt,nightWrap,pr,edit,del);patientsList.appendChild(row);
+    row.append(c,txt,nightWrap,skipWrap,pr,edit,del);patientsList.appendChild(row);
   });
 }
 function renderTotals(){
