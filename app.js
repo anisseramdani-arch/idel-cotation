@@ -217,7 +217,7 @@ function exportExcel(){
     });
     if(pday.passages>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('Passages')}${cell('Nombre de soins cochés')}${cell('2,75 €')}${cell(pday.count,'Number')}${cell(APP_DATA.rates.passages,'Number','Money')}${cell(pday.passages,'Number','Money')}</Row>`);
     if(pday.dim>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('Dim / JF')}${cell('Nombre de soins cochés')}${cell('8,50 €')}${cell(pday.count,'Number')}${cell(APP_DATA.rates.dim,'Number','Money')}${cell(pday.dim,'Number','Money')}</Row>`);
-    if(pday.bs>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('BS')}${cell('Nombre de BS')}${cell('8,83 €')}${cell(pday.bs,'Number')}${cell(APP_DATA.rates.bs,'Number','Money')}${cell(pday.bs,'Number')}${cell(pday.bs*APP_DATA.rates.bs,'Number','Money')}</Row>`);
+    if(pday.bs>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('BS')}${cell('Nombre de BS')}${cell('8,83 €')}${cell(pday.bs,'Number')}${cell(APP_DATA.rates.bs,'Number','Money')}${cell(pday.bs*APP_DATA.rates.bs,'Number','Money')}</Row>`);
   }
   let rows1 = '';
   rows1 += `<Row>${cell('BILAN DU MOIS','String','Header')}${cell(month,'String','Header')}</Row>`;
@@ -236,6 +236,16 @@ function exportExcel(){
   let rows2 = `<Row>${cell('Patient','String','Header')}${cell('Cotation','String','Header')}${cell('Valeur','String','Header')}${cell('Nombre de jours','String','Header')}${cell('Total soins','String','Header')}</Row>`;
   ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(Number(p.value),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });
   const rows3=`<Row>${cell('Jour','String','Header')}${cell('Ligne','String','Header')}${cell('Patient / détail','String','Header')}${cell('Cotation / tarif','String','Header')}${cell('Quantité','String','Header')}${cell('Valeur unitaire','String','Header')}${cell('Total','String','Header')}</Row>${detailedRows.join('')}`;
+  const zebra = rows => {
+    let index=0;
+    return rows.replace(/<Row(.*?)>/g, (match, attrs) => {
+      const n=index++;
+      return `<Row${attrs}${n%2===1?' ss:StyleID="Alt"':''}>`;
+    });
+  };
+  rows1 = zebra(rows1);
+  rows2 = zebra(rows2);
+  const rows3Styled = zebra(rows3);
   const xml=`<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -244,12 +254,13 @@ function exportExcel(){
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
  <Styles>
   <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Bottom"/></Style>
-  <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="Header"><Font ss:Bold="1" ss:Size="12"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>
+  <Style ss:ID="Alt"><Interior ss:Color="#F2F6FA" ss:Pattern="Solid"/></Style>
   <Style ss:ID="Money"><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
  </Styles>
  <Worksheet ss:Name="Bilan mensuel"><Table>${rows1}</Table></Worksheet>
  <Worksheet ss:Name="Patients"><Table>${rows2}</Table></Worksheet>
- <Worksheet ss:Name="Détail complet"><Table>${rows3}</Table></Worksheet>
+ <Worksheet ss:Name="Détail complet"><Table>${rows3Styled}</Table></Worksheet>
 </Workbook>`;
   const blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
   const a=document.createElement('a');
