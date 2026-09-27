@@ -268,7 +268,6 @@ function exportExcel(){
   <Style ss:ID="AltMoney"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
   <Style ss:ID="Total"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/></Style>
   <Style ss:ID="TotalMoney"><Font ss:Bold="1"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
-  <Style ss:ID="Alt"><Interior ss:Color="#F2F6FA" ss:Pattern="Solid"/></Style>
   <Style ss:ID="Money"><NumberFormat ss:Format="#,##0.00 [$€-40C]"/></Style>
  </Styles>
  <Worksheet ss:Name="Bilan mensuel"><Table>${rows1}</Table></Worksheet>
