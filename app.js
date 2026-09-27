@@ -52,13 +52,16 @@ function setupSelectors(){
   for(let y=2026;y<=2030;y++){
     const o=document.createElement('option');o.value=String(y);o.textContent=String(y);yearSelect.appendChild(o);
   }
-  monthSelect.value='Janvier';
-  yearSelect.value='2026';
+  const today = new Date();
+  const todayYear = Math.min(2030, Math.max(2026, today.getFullYear()));
+  monthSelect.value = MONTHS[today.getMonth()];
+  yearSelect.value = String(todayYear);
   const refresh=()=>{fillDays();render();};
   monthSelect.addEventListener('change',refresh);
   yearSelect.addEventListener('change',refresh);
   daySelect.addEventListener('change',render);
   fillDays();
+  daySelect.value = String(today.getDate());
 }
 function fillDays(){
   const current = daySelect.value || '1';
@@ -197,9 +200,24 @@ function exportExcel(){
   const month=monthLabel(), m=monthly(month);
   const ps=patients();
   const counts=ps.map(()=>0), totals=ps.map(()=>0);
+  const detailedRows=[];
   for(let d=1;d<=daysInMonth(month);d++){
     const day=ensureDay(month,String(d));
-    ps.forEach((p,i)=>{ if(isChecked(day,p,i)){counts[i]++; totals[i]+=Number(p.value);} });
+    const pday=parts(day);
+    const hasData=pday.count>0 || pday.dim>0 || pday.bs>0;
+    if(!hasData) continue;
+    ps.forEach((p,i)=>{
+      if(isChecked(day,p,i)){
+        counts[i]++; totals[i]+=Number(p.value);
+        detailedRows.push(`<Row>${cell(d,'Number')}${cell('Soin')}${cell(p.name)}${cell(p.cotation||'')}${cell(1,'Number')}${cell(Number(p.value),'Number','Money')}${cell(Number(p.value),'Number','Money')}</Row>`);
+        if(day.night[p.id]){
+          detailedRows.push(`<Row>${cell(d,'Number')}${cell('Majoration nuit')}${cell(p.name)}${cell('9,15 €')}${cell(1,'Number')}${cell(9.15,'Number','Money')}${cell(9.15,'Number','Money')}</Row>`);
+        }
+      }
+    });
+    if(pday.passages>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('Passages')}${cell('Nombre de soins cochés')}${cell('2,75 €')}${cell(pday.count,'Number')}${cell(APP_DATA.rates.passages,'Number','Money')}${cell(pday.passages,'Number','Money')}</Row>`);
+    if(pday.dim>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('Dim / JF')}${cell('Nombre de soins cochés')}${cell('8,50 €')}${cell(pday.count,'Number')}${cell(APP_DATA.rates.dim,'Number','Money')}${cell(pday.dim,'Number','Money')}</Row>`);
+    if(pday.bs>0) detailedRows.push(`<Row>${cell(d,'Number')}${cell('BS')}${cell('Nombre de BS')}${cell('8,83 €')}${cell(pday.bs,'Number')}${cell(APP_DATA.rates.bs,'Number','Money')}${cell(pday.bs,'Number')}${cell(pday.bs*APP_DATA.rates.bs,'Number','Money')}</Row>`);
   }
   let rows1 = '';
   rows1 += `<Row>${cell('BILAN DU MOIS','String','Header')}${cell(month,'String','Header')}</Row>`;
@@ -213,11 +231,11 @@ function exportExcel(){
   rows1 += `<Row>${cell('Total après rétrocession')}${cell(m.net,'Number','Money')}</Row>`;
   rows1 += `<Row></Row>`;
   rows1 += `<Row>${cell('Jour','String','Header')}${cell('Soins','String','Header')}${cell('Passages','String','Header')}${cell('Majoration nuit','String','Header')}${cell('Dim/JF','String','Header')}${cell('BS','String','Header')}${cell('Total','String','Header')}</Row>`;
-  m.rows.forEach(r=>{ rows1 += `<Row>${cell(r.d,'Number')}${cell(r.care,'Number','Money')}${cell(r.passages,'Number','Money')}${cell(r.night,'Number','Money')}${cell(r.dim,'Number','Money')}${cell(r.bs,'Number','Money')}${cell(r.total,'Number','Money')}</Row>`; });
+  m.rows.filter(r=>r.count>0||r.dim>0||r.bs>0).forEach(r=>{ rows1 += `<Row>${cell(r.d,'Number')}${cell(r.care,'Number','Money')}${cell(r.passages,'Number','Money')}${cell(r.night,'Number','Money')}${cell(r.dim,'Number','Money')}${cell(r.bs,'Number','Money')}${cell(r.total,'Number','Money')}</Row>`; });
 
   let rows2 = `<Row>${cell('Patient','String','Header')}${cell('Cotation','String','Header')}${cell('Valeur','String','Header')}${cell('Nombre de jours','String','Header')}${cell('Total soins','String','Header')}</Row>`;
   ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(Number(p.value),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });
-
+  const rows3=`<Row>${cell('Jour','String','Header')}${cell('Ligne','String','Header')}${cell('Patient / détail','String','Header')}${cell('Cotation / tarif','String','Header')}${cell('Quantité','String','Header')}${cell('Valeur unitaire','String','Header')}${cell('Total','String','Header')}</Row>${detailedRows.join('')}`;
   const xml=`<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -231,6 +249,7 @@ function exportExcel(){
  </Styles>
  <Worksheet ss:Name="Bilan mensuel"><Table>${rows1}</Table></Worksheet>
  <Worksheet ss:Name="Patients"><Table>${rows2}</Table></Worksheet>
+ <Worksheet ss:Name="Détail complet"><Table>${rows3}</Table></Worksheet>
 </Workbook>`;
   const blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
   const a=document.createElement('a');

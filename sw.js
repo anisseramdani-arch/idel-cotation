@@ -1,10 +1,10 @@
-const CACHE='idel-pwa-v5';
+const CACHE='idel-pwa-v7';
 const ASSETS=[
   './',
   './index.html',
-  './styles.css?v=5',
-  './app.js?v=5',
-  './data.js?v=5',
+  './styles.css?v=7',
+  './app.js?v=7',
+  './data.js?v=7',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'

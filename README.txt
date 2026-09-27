@@ -1,4 +1,4 @@
-IDEL Cotation - PWA v5
+IDEL Cotation - PWA v7
 
 Correctifs et ajouts :
 - Sélection des 12 mois de janvier à décembre.
@@ -9,4 +9,4 @@ Correctifs et ajouts :
 - Gestion des patients et export Excel conservés.
 
 Après déploiement GitHub Pages, actualiser l'application avec Ctrl+F5.
-Version 5.
+Version 7.
