@@ -235,7 +235,34 @@ function exportExcel(){
 
   let rows2 = `<Row>${cell('Patient','String','Header')}${cell('Cotation','String','Header')}${cell('Valeur','String','Header')}${cell('Nombre de jours','String','Header')}${cell('Total soins','String','Header')}</Row>`;
   ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(Number(p.value),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });
-  const rows3=`<Row>${cell('Jour','String','Header')}${cell('Ligne','String','Header')}${cell('Patient / détail','String','Header')}${cell('Cotation / tarif','String','Header')}${cell('Quantité','String','Header')}${cell('Valeur unitaire','String','Header')}${cell('Total','String','Header')}</Row>${detailedRows.join('')}`;
+  const detailDays = Array.from({length:daysInMonth(month)},(_,i)=>i+1);
+  const detailRows = [];
+  detailRows.push(`<Row>${cell('Soins / patient','String','Header')}${cell('Cotation','String','Header')}${detailDays.map(d=>cell(String(d),'String','Header')).join('')}</Row>`);
+  ps.forEach((p,i)=>{
+    const values=detailDays.map(d=>{
+      const day=ensureDay(month,String(d));
+      return isChecked(day,p,i)?cell(Number(p.value),'Number','Money'):'<Cell><Data ss:Type="String"></Data></Cell>';
+    }).join('');
+    if(detailDays.some(d=>isChecked(ensureDay(month,String(d)),p,i))){
+      detailRows.push(`<Row>${cell(p.name)}${cell(p.cotation||'')}${values}</Row>`);
+    }
+  });
+  const extraRows = [
+    ['Majoration nuit', d=>parts(ensureDay(month,String(d))).night],
+    ['Passages', d=>parts(ensureDay(month,String(d))).passages],
+    ['Dimanche / jours fériés', d=>parts(ensureDay(month,String(d))).dim],
+    ['BS', d=>parts(ensureDay(month,String(d))).bs],
+    ['TOTAL JOURNALIER', d=>parts(ensureDay(month,String(d))).total]
+  ];
+  extraRows.forEach(([label,getValue],idx)=>{
+    const values=detailDays.map(d=>{
+      const v=getValue(d);
+      return v ? cell(v,'Number',idx===4?'TotalMoney':'Money') : '<Cell><Data ss:Type="String"></Data></Cell>';
+    }).join('');
+    detailRows.push(`<Row>${cell(label,'String',idx===4?'Total':'')}${cell('', 'String',idx===4?'Total':'')}${values}</Row>`);
+  });
+  const rows3=detailRows.join('');
+  const detailColumns='<Column ss:Width="180"/><Column ss:Width="90"/>'+detailDays.map(()=>'<Column ss:Width="68"/>').join('');
   const zebra = rows => {
     let index=0;
     return rows.replace(/<Row(.*?)>(.*?)<\/Row>/g, (match, attrs, body) => {
@@ -261,7 +288,7 @@ function exportExcel(){
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
  <Styles>
-  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Bottom"/></Style>
+  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B7C9D6"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B7C9D6"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B7C9D6"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#B7C9D6"/></Borders></Style>
   <Style ss:ID="Header"><Font ss:Bold="1" ss:Size="14"/><Interior ss:Color="#D9EAD3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>
   <Style ss:ID="Title"><Font ss:Bold="1" ss:Size="18" ss:Color="#1F4E78"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style>
   <Style ss:ID="Alt"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/></Style>
@@ -272,7 +299,7 @@ function exportExcel(){
  </Styles>
  <Worksheet ss:Name="Bilan mensuel"><Table>${rows1}</Table></Worksheet>
  <Worksheet ss:Name="Patients"><Table>${rows2}</Table></Worksheet>
- <Worksheet ss:Name="Détail complet"><Table>${rows3Styled}</Table></Worksheet>
+ <Worksheet ss:Name="Détail complet"><Table>${detailColumns}${zebra(rows3)}</Table></Worksheet>
 </Workbook>`;
   const blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
   const a=document.createElement('a');
