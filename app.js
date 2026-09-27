@@ -26,9 +26,10 @@ function ensureMonth(month){
 }
 function ensureDay(month, day){
   ensureMonth(month);
-  if(!state[month][day]) state[month][day] = {care:{}, dim:false, bs:0};
+  if(!state[month][day]) state[month][day] = {care:{}, night:{}, dim:false, bs:0};
   const d=state[month][day];
   if(!d.care) d.care={};
+  if(!d.night) d.night={};
   return d;
 }
 function save(){ localStorage.setItem(key, JSON.stringify(state)); }
@@ -61,13 +62,15 @@ function current(){return ensureDay(monthSelect.value, daySelect.value);}
 
 function careCount(day){return patients().filter((p,i)=>isChecked(day,p,i)).length;}
 function careTotal(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i)?Number(p.value):0),0);}
+function nightCount(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i) && !!day.night[p.id] ? 1 : 0),0);}
 function parts(day){
   const count=careCount(day);
   const care=careTotal(day);
   const passages=count*APP_DATA.rates.passages;
+  const night=nightCount(day)*APP_DATA.rates.night;
   const dim=day.dim ? count*APP_DATA.rates.dim : 0;
   const bs=(day.bs||0)*APP_DATA.rates.bs;
-  return {count, care, passages, dim, bs, total:care+passages+dim+bs};
+  return {count, care, passages, night, dim, bs, total:care+passages+night+dim+bs};
 }
 
 function renderPatients(day){
@@ -75,13 +78,23 @@ function renderPatients(day){
   patients().forEach((p,i)=>{
     const row=document.createElement('div');row.className='patient';
     const c=document.createElement('input');c.type='checkbox';c.checked=isChecked(day,p,i);
-    c.addEventListener('change',()=>{setChecked(day,p,i,c.checked);save();renderTotals();renderMonth();});
     const txt=document.createElement('div');
     txt.innerHTML=`<strong>${escapeHtml(p.name)}</strong><div class="meta">${escapeHtml(p.cotation||'')}</div>`;
+    const nightWrap=document.createElement('label'); nightWrap.className='night-option';
+    const night=document.createElement('input'); night.type='checkbox'; night.checked=!!day.night[p.id]; night.disabled=!c.checked;
+    const nightText=document.createElement('span'); nightText.textContent='Majoration nuit +9,15 €';
+    nightWrap.append(night,nightText);
+    night.addEventListener('change',()=>{day.night[p.id]=night.checked;save();renderTotals();renderMonth();});
+    c.addEventListener('change',()=>{
+      setChecked(day,p,i,c.checked);
+      if(!c.checked){ day.night[p.id]=false; night.checked=false; night.disabled=true; }
+      else { night.disabled=false; }
+      save();renderTotals();renderMonth();
+    });
     const pr=document.createElement('div');pr.className='price';pr.textContent=money(Number(p.value));
     const del=document.createElement('button');del.className='delete-patient';del.type='button';del.title='Supprimer';del.textContent='🗑';
     del.addEventListener('click',()=>deletePatient(p.id,p.name));
-    row.append(c,txt,pr,del);patientsList.appendChild(row);
+    row.append(c,txt,nightWrap,pr,del);patientsList.appendChild(row);
   });
 }
 function renderTotals(){
@@ -89,6 +102,7 @@ function renderTotals(){
   $('#careTotal').textContent=money(p.care);
   $('#dayTotal').textContent=money(p.total);
   $('#passagesValue').textContent=money(p.passages);
+  $('#nightValue').textContent=money(p.night);
   $('#dimCheck').checked=!!d.dim;
   $('#dimValue').textContent=money(p.dim);
   $('#bsCount').textContent=d.bs||0;
@@ -107,21 +121,22 @@ $('#uncheckAll').addEventListener('click',()=>{
 });
 
 function monthly(month){
-  let care=0,passages=0,dim=0,bs=0,rows=[];
+  let care=0,passages=0,night=0,dim=0,bs=0,rows=[];
   const n=daysInMonth(month);
   for(let d=1;d<=n;d++){
     const p=parts(ensureDay(month,String(d)));
-    care+=p.care; passages+=p.passages; dim+=p.dim; bs+=p.bs;
+    care+=p.care; passages+=p.passages; night+=p.night; dim+=p.dim; bs+=p.bs;
     rows.push({d,...p});
   }
-  const gross=care+passages+dim+bs;
+  const gross=care+passages+night+dim+bs;
   const retro=care*APP_DATA.retrocessionRate;
-  return {care,passages,dim,bs,gross,retro,net:gross-retro,rows};
+  return {care,passages,night,dim,bs,gross,retro,net:gross-retro,rows};
 }
 function renderMonth(){
   const m=monthly(monthSelect.value);
   $('#monthCare').textContent=money(m.care);
   $('#monthPassages').textContent=money(m.passages);
+  $('#monthNight').textContent=money(m.night);
   $('#monthDim').textContent=money(m.dim);
   $('#monthBs').textContent=money(m.bs);
   $('#monthGross').textContent=money(m.gross);
@@ -130,7 +145,7 @@ function renderMonth(){
   const tbody=$('#monthRows');tbody.innerHTML='';
   m.rows.forEach(r=>{
     const tr=document.createElement('tr');
-    const compl=r.passages+r.dim+r.bs;
+    const compl=r.passages+r.night+r.dim+r.bs;
     tr.innerHTML=`<td>${r.d}</td><td>${money(r.care)}</td><td>${money(compl)}</td><td><strong>${money(r.total)}</strong></td>`;
     tbody.appendChild(tr);
   });
@@ -180,14 +195,15 @@ function exportExcel(){
   rows1 += `<Row>${cell('BILAN DU MOIS','String','Header')}${cell(month,'String','Header')}</Row>`;
   rows1 += `<Row>${cell('Total soins')}${cell(m.care,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Passages')}${cell(m.passages,'Number','Money')}</Row>`;
+  rows1 += `<Row>${cell('Majorations nuit')}${cell(m.night,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Dim / JFériés')}${cell(m.dim,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('BS')}${cell(m.bs,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Total brut')}${cell(m.gross,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Rétrocession 10 % (soins uniquement)')}${cell(m.retro,'Number','Money')}</Row>`;
   rows1 += `<Row>${cell('Total après rétrocession')}${cell(m.net,'Number','Money')}</Row>`;
   rows1 += `<Row></Row>`;
-  rows1 += `<Row>${cell('Jour','String','Header')}${cell('Soins','String','Header')}${cell('Passages','String','Header')}${cell('Dim/JF','String','Header')}${cell('BS','String','Header')}${cell('Total','String','Header')}</Row>`;
-  m.rows.forEach(r=>{ rows1 += `<Row>${cell(r.d,'Number')}${cell(r.care,'Number','Money')}${cell(r.passages,'Number','Money')}${cell(r.dim,'Number','Money')}${cell(r.bs,'Number','Money')}${cell(r.total,'Number','Money')}</Row>`; });
+  rows1 += `<Row>${cell('Jour','String','Header')}${cell('Soins','String','Header')}${cell('Passages','String','Header')}${cell('Majoration nuit','String','Header')}${cell('Dim/JF','String','Header')}${cell('BS','String','Header')}${cell('Total','String','Header')}</Row>`;
+  m.rows.forEach(r=>{ rows1 += `<Row>${cell(r.d,'Number')}${cell(r.care,'Number','Money')}${cell(r.passages,'Number','Money')}${cell(r.night,'Number','Money')}${cell(r.dim,'Number','Money')}${cell(r.bs,'Number','Money')}${cell(r.total,'Number','Money')}</Row>`; });
 
   let rows2 = `<Row>${cell('Patient','String','Header')}${cell('Cotation','String','Header')}${cell('Valeur','String','Header')}${cell('Nombre de jours','String','Header')}${cell('Total soins','String','Header')}</Row>`;
   ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(Number(p.value),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });

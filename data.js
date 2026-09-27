@@ -16,6 +16,7 @@ const APP_DATA = {
       "label": "Décembre 2026"
     }
   ],
+  "rates": {"passages": 2.75, "dim": 8.50, "bs": 8.83, "night": 9.15},
   "patients": [
     {
       "name": "Cat",

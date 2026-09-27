@@ -20,7 +20,7 @@ select{width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5d1;border-ra
 .section-title{display:flex;align-items:center;justify-content:space-between}
 h2{font-size:1.05rem;margin:0 0 12px}
 .patients{display:grid;gap:8px}
-.patient{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ecea;border-radius:12px}
+.patient{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ecea;border-radius:12px}
 .patient input{width:24px;height:24px}
 .patient .meta{font-size:.78rem;color:#6a7b78}
 .patient .price{font-weight:700;white-space:nowrap}
@@ -42,3 +42,6 @@ footer{text-align:center;padding:20px;color:#73827f;font-size:.78rem}
 .form-actions{display:flex;justify-content:flex-end;gap:8px}
 .primary{border:0;background:#0f766e;color:white;padding:10px 14px;border-radius:10px;font-weight:700}
 @media(max-width:520px){.patient{grid-template-columns:auto 1fr auto}.delete-patient{grid-column:3;grid-row:1/3}.patient .price{grid-column:2}}
+
+.night-option{display:flex;align-items:center;gap:5px;font-size:.76rem;color:#5c6f6b;font-weight:600;white-space:nowrap}.night-option input{width:18px;height:18px;margin:0}.night-option input:disabled{opacity:.45}
+@media(max-width:700px){.patient{grid-template-columns:auto 1fr auto}.night-option{grid-column:2/4;grid-row:2;justify-self:start}.patient .price{grid-column:2;grid-row:1}.delete-patient{grid-column:3;grid-row:1}}

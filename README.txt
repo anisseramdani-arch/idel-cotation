@@ -1,11 +1,8 @@
-IDEL Cotation - PWA v3
+IDEL Cotation - PWA v4
 
-Correctif :
-- Forçage de la mise à jour de app.js/styles.css/data.js.
-- Suppression automatique des anciens caches PWA.
-- Bouton + Ajouter et suppression patient actifs.
-- Export Excel conservé.
-- Rétrocession 10 % uniquement sur les soins.
-
-Après déploiement GitHub Pages, recharger une fois la page.
-Le pied de page doit afficher "Version 3".
+Ajout :
+- Option « Majoration nuit +9,15 € » pour chaque passage/patient coché.
+- La majoration est comptée uniquement si le passage est coché.
+- Total journalier et bilan mensuel intègrent les majorations nuit.
+- Export Excel mis à jour avec les majorations nuit.
+- Rétrocession 10 % toujours calculée uniquement sur les soins.

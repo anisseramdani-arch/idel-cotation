@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f766e">
   <title>IDEL Cotation</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
   <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -82,6 +82,14 @@
         </div>
 
         <div class="extra-row">
+          <div>
+            <strong>Majorations nuit</strong>
+            <small>9,15 € pour chaque passage marqué « Majoration nuit »</small>
+          </div>
+          <div class="extra-value" id="nightValue">0,00 €</div>
+        </div>
+
+        <div class="extra-row">
           <label class="switch-label">
             <input type="checkbox" id="dimCheck">
             <span>Dim / JFériés</span>
@@ -116,6 +124,7 @@
         <div class="bilan">
           <div><span>Total soins</span><strong id="monthCare">0,00 €</strong></div>
           <div><span>Passages</span><strong id="monthPassages">0,00 €</strong></div>
+          <div><span>Majorations nuit</span><strong id="monthNight">0,00 €</strong></div>
           <div><span>Dim / JFériés</span><strong id="monthDim">0,00 €</strong></div>
           <div><span>BS</span><strong id="monthBs">0,00 €</strong></div>
           <div class="total"><span>Total brut</span><strong id="monthGross">0,00 €</strong></div>
@@ -137,9 +146,9 @@
     </section>
   </main>
 
-  <footer>Les données restent enregistrées localement sur cet appareil. · Version 3</footer>
+  <footer>Les données restent enregistrées localement sur cet appareil. · Version 4</footer>
 
-  <script src="data.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <script src="data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
