@@ -105,9 +105,11 @@ function renderPatients(day){
       save();renderTotals();renderMonth();
     });
     const pr=document.createElement('div');pr.className='price';pr.textContent=money(Number(p.value));
+    const edit=document.createElement('button');edit.className='edit-patient';edit.type='button';edit.title='Modifier le patient';edit.setAttribute('aria-label',`Modifier ${p.name}`);edit.textContent='✏️';
+    edit.addEventListener('click',()=>editPatient(p.id));
     const del=document.createElement('button');del.className='delete-patient';del.type='button';del.title='Supprimer';del.textContent='🗑';
     del.addEventListener('click',()=>deletePatient(p.id,p.name));
-    row.append(c,txt,nightWrap,pr,del);patientsList.appendChild(row);
+    row.append(c,txt,nightWrap,pr,edit,del);patientsList.appendChild(row);
   });
 }
 function renderTotals(){
@@ -183,6 +185,26 @@ $('#addPatient').addEventListener('click',()=>{
   $('#newPatientName').value=''; $('#newPatientValue').value=''; $('#newPatientCotation').value='';
   $('#addPatientForm').hidden=true; save(); render();
 });
+function editPatient(id){
+  const p=patients().find(patient=>patient.id===id);
+  if(!p) return;
+  const name=prompt('Nom du patient :',p.name);
+  if(name===null) return;
+  const cleanName=name.trim();
+  if(!cleanName){alert('Le nom du patient ne peut pas être vide.');return;}
+  const valueText=prompt('Valeur (€) :',String(p.value).replace('.',','));
+  if(valueText===null) return;
+  const value=parseFloat(valueText.trim().replace(',','.'));
+  if(!Number.isFinite(value)||value<0){alert('Indique une valeur valide, supérieure ou égale à 0.');return;}
+  const cotation=prompt('Cotation :',p.cotation||'');
+  if(cotation===null) return;
+  // Keep the patient ID unchanged so all existing care and night entries remain linked.
+  p.name=cleanName;
+  p.value=value;
+  p.cotation=cotation.trim();
+  save();
+  render();
+}
 function deletePatient(id,name){
   if(!confirm(`Supprimer ${name} de la liste des patients ?`)) return;
   state._patients = patients().filter(p=>p.id!==id);
