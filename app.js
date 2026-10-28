@@ -234,16 +234,14 @@ function renderPatients(day){
     });
     const pr=document.createElement('div');pr.className='price';pr.textContent=money(patientValue(p));
     const actions=document.createElement('div');actions.className='patient-actions';
-    if(p.address){const maps=document.createElement('a');maps.className='maps-button maps-link';maps.href=googleMapsUrl(p.address);maps.target='_blank';maps.rel='noopener';maps.title='Ouvrir dans Google Maps';maps.textContent='📍';maps.setAttribute('aria-label',`Ouvrir l’adresse de ${p.name} dans Google Maps`);actions.appendChild(maps);}
+    if(p.address){const maps=document.createElement('a');maps.className='maps-button maps-link';maps.href=googleMapsUrl(p.address);maps.target='_blank';maps.rel='noopener';maps.title='Itinéraire depuis ma position';maps.textContent='📍';maps.setAttribute('aria-label',`Itinéraire Google Maps depuis votre position vers ${p.name}`);actions.appendChild(maps);}
     const edit=document.createElement('button');edit.className='edit-patient';edit.type='button';edit.title='Modifier le patient';edit.setAttribute('aria-label',`Modifier ${p.name}`);edit.textContent='✏️';
     edit.addEventListener('click',()=>editPatient(p.id));
     const del=document.createElement('button');del.className='delete-patient';del.type='button';del.title='Supprimer';del.textContent='🗑';
     del.addEventListener('click',()=>deletePatient(p.id,p.name));
-    const up=document.createElement('button');up.className='order-patient';up.type='button';up.textContent='↑';up.title='Monter dans la liste';up.disabled=i===0;up.addEventListener('click',()=>movePatient(p.id,-1));
-    const down=document.createElement('button');down.className='order-patient';down.type='button';down.textContent='↓';down.title='Descendre dans la liste';down.disabled=i===patients().length-1;down.addEventListener('click',()=>movePatient(p.id,1));
     const close=document.createElement('button');close.className='close-patient';close.type='button';close.textContent='📅';close.title='Clôturer le patient';close.addEventListener('click',()=>closePatient(p.id));
-    actions.append(up,down,edit,close,del);
-    row.append(c,handle,txt,nightWrap,skipWrap,pr,actions);patientsList.appendChild(row);
+    actions.append(edit,close,del);
+    row.append(c,txt,handle,nightWrap,skipWrap,pr,actions);patientsList.appendChild(row);
   });
 }
 function renderTotals(){
@@ -319,7 +317,7 @@ $('#addActRow').addEventListener('click',()=>{addActEditorRow();renderEditorPrev
 $('#savePatient').addEventListener('click',savePatientEditor);
 $('#editorMaps').addEventListener('click',()=>{const address=$('#editorAddress').value.trim();if(address)window.open(googleMapsUrl(address),'_blank','noopener,noreferrer');});
 $('#editorAddress').addEventListener('input',()=>{$('#editorMaps').disabled=!$('#editorAddress').value.trim();});
-function googleMapsUrl(address){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;}
+function googleMapsUrl(address){return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}&travelmode=driving`;}
 function openPatientEditor(id=null){
   editingPatientId=id;
   const p=id?patients().find(item=>item.id===id):null;
@@ -401,11 +399,6 @@ function savePatientEditor(){
 }
 function displayCotation(p){return Array.isArray(p.acts)&&p.acts.length?p.acts.map(act=>`${act.code} ${String(act.coefficient).replace('.',',')}`).join(' + '):(p.cotation||'');}
 function editPatient(id){openPatientEditor(id);}
-function movePatient(id,delta){
-  const list=patients(), from=list.findIndex(p=>p.id===id), to=from+delta;
-  if(from<0||to<0||to>=list.length)return;
-  [list[from],list[to]]=[list[to],list[from]];save();render();
-}
 let dragState=null;
 patientsList.addEventListener('pointerdown',event=>{
   const handle=event.target.closest('.drag-handle');if(!handle||event.button!==0)return;

@@ -3,8 +3,8 @@ IDEL Cotation — version 19 NGAP
 Contenu
 - Application PWA à fichiers statiques, déployable sur GitHub Pages.
 - Fiches patient avec plusieurs lignes d’actes, sélection du libellé, lettre-clé, coefficient et passage.
-- Réorganisation des patients par appui long sur la poignée ⠿ puis glisser-déposer; les flèches ↑ / ↓ restent disponibles.
-- Adresse enregistrée dans la fiche patient et bouton pour ouvrir l’adresse dans Google Maps.
+- Réorganisation des patients par appui long sur la poignée ⠿ à droite du nom puis glisser-déposer.
+- Adresse enregistrée dans la fiche patient et bouton pour lancer un itinéraire Google Maps depuis la position actuelle.
 - Calcul estimatif selon la lettre-clé et les règles de cumul implémentées ci-dessous.
 - Suivi journalier, historique, clôture à date, réorganisation, bilan mensuel et export Excel conservés.
 - Stockage des données dans le localStorage du navigateur, sous la clé historique idel-pwa-v1.
@@ -45,4 +45,4 @@ Déploiement GitHub Pages
 4. Validez le changement et attendez la fin de GitHub Pages.
 5. Ouvrez l’application sur la même adresse qu’avant, puis actualisez complètement (Ctrl+F5). Le nouveau cache PWA est idel-pwa-v19-drag-maps.
 
-Si l’application existait déjà sur cette adresse, les données enregistrées localement sont conservées. Les nouvelles adresses sont enregistrées dans le stockage local du navigateur, comme les fiches patient. Le bouton Google Maps transmet l’adresse à Google dans un nouvel onglet. Les lignes ajoutées au moteur d’actes sont enregistrées dans la fiche patient; une ancienne cotation texte reste inchangée tant qu’aucune nouvelle ligne n’est ajoutée. Ajouter une ligne puis enregistrer remplace cette cotation historique par les actes structurés.
+Si l’application existait déjà sur cette adresse, les données enregistrées localement sont conservées. Les nouvelles adresses sont enregistrées dans le stockage local du navigateur, comme les fiches patient. Le bouton Google Maps transmet l’adresse de destination à Google dans un nouvel onglet et demande un itinéraire en voiture depuis la position de départ actuelle; Google Maps peut demander l’autorisation d’accéder à la position. Les lignes ajoutées au moteur d’actes sont enregistrées dans la fiche patient; une ancienne cotation texte reste inchangée tant qu’aucune nouvelle ligne n’est ajoutée. Ajouter une ligne puis enregistrer remplace cette cotation historique par les actes structurés.
