@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f766e">
   <title>IDEL Cotation</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="styles.css?v=18">
   <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -53,23 +53,8 @@
       <section class="card">
         <div class="section-title">
           <h2>Patients</h2>
-          <button id="settingsRates" class="ghost small">Paramètres AMI/BSA…</button>
+          <button id="settingsRates" class="ghost small">Tarifs NGAP…</button>
           <button id="showAddPatient" class="ghost small">+ Ajouter</button>
-        </div>
-        <div id="addPatientForm" class="patient-form" hidden>
-          <label>Nom
-            <input id="newPatientName" type="text" placeholder="Nom du patient">
-          </label>
-          <label>Valeur (€)
-            <input id="newPatientValue" type="number" step="0.001" min="0" placeholder="0,00">
-          </label>
-          <label>Cotation
-            <input id="newPatientCotation" type="text" placeholder="Ex. AMI 1,2">
-          </label>
-          <div class="form-actions">
-            <button id="cancelAddPatient" class="ghost">Annuler</button>
-            <button id="addPatient" class="primary">Ajouter</button>
-          </div>
         </div>
         <p class="note">Utilise ↑ / ↓ pour réordonner, ✏️ pour modifier et 📅 pour clôturer un patient à une date sans effacer son historique.</p>
       </section>
@@ -150,9 +135,23 @@
     </section>
   </main>
 
-  <footer>Les données restent enregistrées localement sur cet appareil. · Version 15</footer>
+  <footer>Les données restent enregistrées localement sur cet appareil. · Version 18 · Outil d’aide, cotation à vérifier dans la NGAP</footer>
 
-  <script src="data.js?v=17"></script>
-  <script src="app.js?v=17"></script>
+  <dialog id="patientEditor" class="patient-editor">
+    <div class="editor-head"><h2 id="editorTitle">Fiche patient</h2><button id="closeEditor" class="ghost" type="button" aria-label="Fermer">×</button></div>
+    <label>Nom du patient<input id="editorName" type="text" autocomplete="off"></label>
+    <p id="legacyNotice" class="notice" hidden></p>
+    <div class="editor-section-head"><h3>Actes du même patient</h3><button id="addActRow" class="primary" type="button">+ Ajouter un acte</button></div>
+    <p class="note">Choisis l’acte NGAP, vérifie la lettre-clé et le coefficient, puis indique le passage. Les lignes d’un même passage sont évaluées ensemble.</p>
+    <div id="actRows" class="act-rows"></div>
+    <div class="editor-total"><span>Montant estimatif des actes</span><strong id="editorTotal">0,00 €</strong></div>
+    <div id="engineDetails" class="engine-details"></div>
+    <div id="editorWarnings" class="engine-warnings" hidden></div>
+    <p class="source-note">Référence : NGAP Assurance Maladie au 01/09/2026. <a href="https://www.ameli.fr/sites/default/files/Documents/NGAP%2001.09.2026%20VF.pdf" target="_blank" rel="noopener">Lire la NGAP officielle</a> · <a href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000055006333" target="_blank" rel="noopener">Décision publiée le 22/10/2026</a>. Les exceptions dépendant de l’ordonnance, du passage ou du contexte restent à contrôler.</p>
+    <div class="form-actions"><button id="cancelEditor" class="ghost" type="button">Annuler</button><button id="savePatient" class="primary" type="button">Enregistrer</button></div>
+  </dialog>
+
+  <script src="data.js?v=18"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>
