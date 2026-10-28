@@ -211,8 +211,9 @@ function renderPatients(day){
   patientsList.innerHTML='';
   patients().forEach((p,i)=>{
     if(!activeOnDate(p,currentISODate())) return;
-    const row=document.createElement('div');row.className='patient';
+    const row=document.createElement('div');row.className='patient';row.dataset.patientId=p.id;
     const c=document.createElement('input');c.type='checkbox';c.checked=isChecked(day,p,i);
+    const handle=document.createElement('button');handle.className='drag-handle';handle.type='button';handle.textContent='⠿';handle.title='Maintenir puis faire glisser pour réordonner';handle.setAttribute('aria-label',`Réordonner ${p.name} par glisser-déposer`);
     const txt=document.createElement('div');
     txt.innerHTML=`<strong>${escapeHtml(p.name)}</strong><div class="meta">${escapeHtml(displayCotation(p))}</div>`;
     const nightWrap=document.createElement('label'); nightWrap.className='night-option';
@@ -232,6 +233,8 @@ function renderPatients(day){
       save();renderTotals();renderMonth();
     });
     const pr=document.createElement('div');pr.className='price';pr.textContent=money(patientValue(p));
+    const actions=document.createElement('div');actions.className='patient-actions';
+    if(p.address){const maps=document.createElement('a');maps.className='maps-button maps-link';maps.href=googleMapsUrl(p.address);maps.target='_blank';maps.rel='noopener';maps.title='Ouvrir dans Google Maps';maps.textContent='📍';maps.setAttribute('aria-label',`Ouvrir l’adresse de ${p.name} dans Google Maps`);actions.appendChild(maps);}
     const edit=document.createElement('button');edit.className='edit-patient';edit.type='button';edit.title='Modifier le patient';edit.setAttribute('aria-label',`Modifier ${p.name}`);edit.textContent='✏️';
     edit.addEventListener('click',()=>editPatient(p.id));
     const del=document.createElement('button');del.className='delete-patient';del.type='button';del.title='Supprimer';del.textContent='🗑';
@@ -239,7 +242,8 @@ function renderPatients(day){
     const up=document.createElement('button');up.className='order-patient';up.type='button';up.textContent='↑';up.title='Monter dans la liste';up.disabled=i===0;up.addEventListener('click',()=>movePatient(p.id,-1));
     const down=document.createElement('button');down.className='order-patient';down.type='button';down.textContent='↓';down.title='Descendre dans la liste';down.disabled=i===patients().length-1;down.addEventListener('click',()=>movePatient(p.id,1));
     const close=document.createElement('button');close.className='close-patient';close.type='button';close.textContent='📅';close.title='Clôturer le patient';close.addEventListener('click',()=>closePatient(p.id));
-    row.append(c,txt,nightWrap,skipWrap,pr,up,down,edit,close,del);patientsList.appendChild(row);
+    actions.append(up,down,edit,close,del);
+    row.append(c,handle,txt,nightWrap,skipWrap,pr,actions);patientsList.appendChild(row);
   });
 }
 function renderTotals(){
@@ -313,11 +317,16 @@ $('#closeEditor').addEventListener('click',()=>editor.close());
 $('#cancelEditor').addEventListener('click',()=>editor.close());
 $('#addActRow').addEventListener('click',()=>{addActEditorRow();renderEditorPreview();});
 $('#savePatient').addEventListener('click',savePatientEditor);
+$('#editorMaps').addEventListener('click',()=>{const address=$('#editorAddress').value.trim();if(address)window.open(googleMapsUrl(address),'_blank','noopener,noreferrer');});
+$('#editorAddress').addEventListener('input',()=>{$('#editorMaps').disabled=!$('#editorAddress').value.trim();});
+function googleMapsUrl(address){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;}
 function openPatientEditor(id=null){
   editingPatientId=id;
   const p=id?patients().find(item=>item.id===id):null;
   $('#editorTitle').textContent=p?'Modifier la fiche patient':'Ajouter un patient';
   $('#editorName').value=p?.name||'';
+  $('#editorAddress').value=p?.address||'';
+  $('#editorMaps').disabled=!p?.address;
   const notice=$('#legacyNotice');
   notice.hidden=!(p&&!Array.isArray(p.acts));
   notice.textContent=p&&!Array.isArray(p.acts)?`Ancienne cotation : ${p.cotation||'non précisée'} · montant enregistré : ${money(p.value)}. Elle reste inchangée si tu n’ajoutes pas de lignes NGAP. Ajouter des actes puis enregistrer remplacera cette cotation historique par le calcul des lignes.`:'';
@@ -376,12 +385,13 @@ function renderEditorPreview(){
   warnings.hidden=result.warnings.length===0;
 }
 function savePatientEditor(){
-  const name=$('#editorName').value.trim(),acts=readEditorActs();
+  const name=$('#editorName').value.trim(),address=$('#editorAddress').value.trim(),acts=readEditorActs();
   if(!name){alert('Indique un nom de patient.');return;}
   if(!editingPatientId&&!acts.length){alert('Ajoute au moins une ligne d’acte.');return;}
   let p=editingPatientId?patients().find(item=>item.id===editingPatientId):null;
   if(!p){p={id:`custom-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name,value:0,cotation:''};patients().push(p);}
   p.name=name;
+  p.address=address;
   if(acts.length){
     p.acts=acts;
     p.cotation=acts.map(act=>`${act.code} ${String(act.coefficient).replace('.',',')} (passage ${act.passage})`).join(' + ');
@@ -396,6 +406,37 @@ function movePatient(id,delta){
   if(from<0||to<0||to>=list.length)return;
   [list[from],list[to]]=[list[to],list[from]];save();render();
 }
+let dragState=null;
+patientsList.addEventListener('pointerdown',event=>{
+  const handle=event.target.closest('.drag-handle');if(!handle||event.button!==0)return;
+  const row=handle.closest('.patient');dragState={id:row.dataset.patientId,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,active:false,timer:setTimeout(()=>beginPatientDrag(row,event.pointerId),450)};
+});
+function beginPatientDrag(row,pointerId){
+  if(!dragState||dragState.pointerId!==pointerId)return;
+  dragState.active=true;row.classList.add('dragging');
+  try{row.querySelector('.drag-handle').setPointerCapture(pointerId);}catch{}
+}
+patientsList.addEventListener('pointermove',event=>{
+  if(!dragState||dragState.pointerId!==event.pointerId)return;
+  if(!dragState.active){if(Math.hypot(event.clientX-dragState.startX,event.clientY-dragState.startY)>10){clearTimeout(dragState.timer);dragState=null;}return;}
+  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.patient');
+  patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('drop-before','drop-after'));
+  if(target&&target.dataset.patientId!==dragState.id){const rect=target.getBoundingClientRect();target.classList.add(event.clientY<rect.top+rect.height/2?'drop-before':'drop-after');}
+});
+function finishPatientDrag(event){
+  if(!dragState||dragState.pointerId!==event.pointerId)return;
+  clearTimeout(dragState.timer);const id=dragState.id,active=dragState.active;dragState=null;
+  const source=patientsList.querySelector(`[data-patient-id="${CSS.escape(id)}"]`);
+  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.patient');
+  patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));
+  if(!active||!source||!target||source===target)return;
+  const list=patients(),from=list.findIndex(p=>p.id===id),to=list.findIndex(p=>p.id===target.dataset.patientId);if(from<0||to<0)return;
+  const [item]=list.splice(from,1),adjustedTo=list.findIndex(p=>p.id===target.dataset.patientId);
+  const rect=target.getBoundingClientRect(),after=event.clientY>=rect.top+rect.height/2;
+  list.splice(adjustedTo+(after?1:0),0,item);save();render();
+}
+patientsList.addEventListener('pointerup',finishPatientDrag);
+patientsList.addEventListener('pointercancel',event=>{if(dragState&&dragState.pointerId===event.pointerId){clearTimeout(dragState.timer);dragState=null;patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));}});
 function closePatient(id){
   const p=patients().find(x=>x.id===id);if(!p)return;
   const date=prompt(`Date de clôture de ${p.name} (AAAA-MM-JJ). Visible jusqu'à cette date.`,p.closedOn||currentISODate());

@@ -1,10 +1,10 @@
-const CACHE='idel-pwa-v18-ngap';
+const CACHE='idel-pwa-v19-drag-maps';
 const ASSETS=[
   './',
   './index.html',
-  './styles.css?v=18',
-  './app.js?v=18',
-  './data.js?v=18',
+  './styles.css?v=19',
+  './app.js?v=19',
+  './data.js?v=19',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
