@@ -214,7 +214,7 @@ function renderPatients(day){
     const row=document.createElement('div');row.className='patient';row.dataset.patientId=p.id;
     const c=document.createElement('input');c.type='checkbox';c.checked=isChecked(day,p,i);
     const handle=document.createElement('button');handle.className='drag-handle';handle.type='button';handle.textContent='⠿';handle.title='Maintenir puis faire glisser pour réordonner';handle.setAttribute('aria-label',`Réordonner ${p.name} par glisser-déposer`);
-    const txt=document.createElement('div');
+    const txt=document.createElement('div');txt.className='patient-label';
     txt.innerHTML=`<strong>${escapeHtml(p.name)}</strong><div class="meta">${escapeHtml(displayCotation(p))}</div>`;
     const nightWrap=document.createElement('label'); nightWrap.className='night-option';
     const night=document.createElement('input'); night.type='checkbox'; night.checked=!!day.night[p.id]; night.disabled=!c.checked;
@@ -401,24 +401,36 @@ function displayCotation(p){return Array.isArray(p.acts)&&p.acts.length?p.acts.m
 function editPatient(id){openPatientEditor(id);}
 let dragState=null;
 patientsList.addEventListener('pointerdown',event=>{
-  const handle=event.target.closest('.drag-handle');if(!handle||event.button!==0)return;
-  const row=handle.closest('.patient');dragState={id:row.dataset.patientId,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,active:false,timer:setTimeout(()=>beginPatientDrag(row,event.pointerId),450)};
+  const grip=event.target.closest('.drag-handle,.patient-label');if(!grip||event.button!==0)return;
+  const row=grip.closest('.patient');dragState={id:row.dataset.patientId,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,x:event.clientX,y:event.clientY,source:grip,active:false,timer:setTimeout(()=>beginPatientDrag(row,event.pointerId),450),frame:0};
 });
 function beginPatientDrag(row,pointerId){
   if(!dragState||dragState.pointerId!==pointerId)return;
   dragState.active=true;row.classList.add('dragging');
-  try{row.querySelector('.drag-handle').setPointerCapture(pointerId);}catch{}
+  try{dragState.source.setPointerCapture(pointerId);}catch{}
+  autoScrollPatientList();
+}
+function markPatientDropTarget(x,y){
+  const target=document.elementFromPoint(x,y)?.closest('.patient');
+  patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('drop-before','drop-after'));
+  if(target&&dragState&&target.dataset.patientId!==dragState.id){const rect=target.getBoundingClientRect();target.classList.add(y<rect.top+rect.height/2?'drop-before':'drop-after');}
+}
+function autoScrollPatientList(){
+  if(!dragState?.active)return;
+  const y=dragState.y,edge=75,viewport=window.innerHeight;
+  if(y<edge)window.scrollBy(0,-Math.max(3,Math.ceil((edge-y)/8)));
+  else if(y>viewport-edge)window.scrollBy(0,Math.max(3,Math.ceil((y-(viewport-edge))/8)));
+  markPatientDropTarget(dragState.x,dragState.y);
+  dragState.frame=requestAnimationFrame(autoScrollPatientList);
 }
 patientsList.addEventListener('pointermove',event=>{
   if(!dragState||dragState.pointerId!==event.pointerId)return;
   if(!dragState.active){if(Math.hypot(event.clientX-dragState.startX,event.clientY-dragState.startY)>10){clearTimeout(dragState.timer);dragState=null;}return;}
-  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.patient');
-  patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('drop-before','drop-after'));
-  if(target&&target.dataset.patientId!==dragState.id){const rect=target.getBoundingClientRect();target.classList.add(event.clientY<rect.top+rect.height/2?'drop-before':'drop-after');}
+  dragState.x=event.clientX;dragState.y=event.clientY;markPatientDropTarget(event.clientX,event.clientY);
 });
 function finishPatientDrag(event){
   if(!dragState||dragState.pointerId!==event.pointerId)return;
-  clearTimeout(dragState.timer);const id=dragState.id,active=dragState.active;dragState=null;
+  clearTimeout(dragState.timer);const id=dragState.id,active=dragState.active;if(dragState.frame)cancelAnimationFrame(dragState.frame);dragState=null;
   const source=patientsList.querySelector(`[data-patient-id="${CSS.escape(id)}"]`);
   const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.patient');
   patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));
@@ -429,7 +441,7 @@ function finishPatientDrag(event){
   list.splice(adjustedTo+(after?1:0),0,item);save();render();
 }
 patientsList.addEventListener('pointerup',finishPatientDrag);
-patientsList.addEventListener('pointercancel',event=>{if(dragState&&dragState.pointerId===event.pointerId){clearTimeout(dragState.timer);dragState=null;patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));}});
+patientsList.addEventListener('pointercancel',event=>{if(dragState&&dragState.pointerId===event.pointerId){clearTimeout(dragState.timer);if(dragState.frame)cancelAnimationFrame(dragState.frame);dragState=null;patientsList.querySelectorAll('.patient').forEach(row=>row.classList.remove('dragging','drop-before','drop-after'));}});
 function closePatient(id){
   const p=patients().find(x=>x.id===id);if(!p)return;
   const date=prompt(`Date de clôture de ${p.name} (AAAA-MM-JJ). Visible jusqu'à cette date.`,p.closedOn||currentISODate());

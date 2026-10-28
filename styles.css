@@ -80,6 +80,7 @@ footer{text-align:center;padding:20px;color:#73827f;font-size:.78rem}
 /* V19: drag handle, action cluster and address links */
 .patient{grid-template-columns:28px minmax(120px,1fr) 30px auto auto auto auto;touch-action:pan-y}
 .patient .drag-handle{border:0;background:#edf5f4;color:#28504c;width:30px;height:36px;border-radius:8px;font-size:1.35rem;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.patient-label{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
 .patient .drag-handle:active{cursor:grabbing}
 .patient-actions{display:flex;align-items:center;gap:4px}
 .patient.dragging{opacity:.55;outline:2px dashed #0f766e;z-index:2}

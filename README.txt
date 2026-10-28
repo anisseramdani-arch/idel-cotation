@@ -1,9 +1,9 @@
-IDEL Cotation — version 19 NGAP
+IDEL Cotation — version 20 NGAP
 
 Contenu
 - Application PWA à fichiers statiques, déployable sur GitHub Pages.
 - Fiches patient avec plusieurs lignes d’actes, sélection du libellé, lettre-clé, coefficient et passage.
-- Réorganisation des patients par appui long sur la poignée ⠿ à droite du nom puis glisser-déposer.
+- Réorganisation des patients par appui long sur leur étiquette puis glisser vers le haut ou le bas; le défilement automatique accompagne le déplacement près du bord de l’écran.
 - Adresse enregistrée dans la fiche patient et bouton pour lancer un itinéraire Google Maps depuis la position actuelle.
 - Calcul estimatif selon la lettre-clé et les règles de cumul implémentées ci-dessous.
 - Suivi journalier, historique, clôture à date, réorganisation, bilan mensuel et export Excel conservés.
@@ -43,6 +43,6 @@ Déploiement GitHub Pages
 2. Décompressez le ZIP. Copiez tous les fichiers de ce dossier à la racine du dépôt GitHub Pages, en gardant icon-192.png et icon-512.png.
 3. Vérifiez que le dépôt ne contient pas de fichier data.js ou autre fichier public avec des noms/cotations patients. Le fichier data.js de ce ZIP ne contient aucun dossier patient nominatif.
 4. Validez le changement et attendez la fin de GitHub Pages.
-5. Ouvrez l’application sur la même adresse qu’avant, puis actualisez complètement (Ctrl+F5). Le nouveau cache PWA est idel-pwa-v19-drag-maps.
+5. Ouvrez l’application sur la même adresse qu’avant, puis actualisez complètement (Ctrl+F5). Le nouveau cache PWA est idel-pwa-v20-longpress-scroll.
 
 Si l’application existait déjà sur cette adresse, les données enregistrées localement sont conservées. Les nouvelles adresses sont enregistrées dans le stockage local du navigateur, comme les fiches patient. Le bouton Google Maps transmet l’adresse de destination à Google dans un nouvel onglet et demande un itinéraire en voiture depuis la position de départ actuelle; Google Maps peut demander l’autorisation d’accéder à la position. Les lignes ajoutées au moteur d’actes sont enregistrées dans la fiche patient; une ancienne cotation texte reste inchangée tant qu’aucune nouvelle ligne n’est ajoutée. Ajouter une ligne puis enregistrer remplace cette cotation historique par les actes structurés.
