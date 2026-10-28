@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f766e">
   <title>IDEL Cotation</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
   <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -53,6 +53,7 @@
       <section class="card">
         <div class="section-title">
           <h2>Patients</h2>
+          <button id="settingsRates" class="ghost small">Paramètres AMI/BSA…</button>
           <button id="showAddPatient" class="ghost small">+ Ajouter</button>
         </div>
         <div id="addPatientForm" class="patient-form" hidden>
@@ -70,7 +71,7 @@
             <button id="addPatient" class="primary">Ajouter</button>
           </div>
         </div>
-        <p class="note">Utilise l’icône corbeille à droite d’un patient pour le supprimer de la liste.</p>
+        <p class="note">Utilise ↑ / ↓ pour réordonner, ✏️ pour modifier et 📅 pour clôturer un patient à une date sans effacer son historique.</p>
       </section>
 
       <section class="card extras">
@@ -151,7 +152,7 @@
 
   <footer>Les données restent enregistrées localement sur cet appareil. · Version 15</footer>
 
-  <script src="data.js?v=16"></script>
-  <script src="app.js?v=16"></script>
+  <script src="data.js?v=17"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>

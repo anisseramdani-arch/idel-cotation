@@ -10,6 +10,18 @@ let state = JSON.parse(localStorage.getItem(key) || '{}');
 function basePatients(){
   return APP_DATA.patients.map((p,i)=>({...p,id:`base-${i}`}));
 }
+const DEFAULT_COTATION_RATES = { AMI:3.15, AMX:3.15, BSA:13.00, BSB:18.20, BSC:28.70, BSI:13.00 };
+function cotationRates(){ return {...DEFAULT_COTATION_RATES, ...(state._cotationRates||{})}; }
+function patientValue(p){
+  const rates=cotationRates();
+  const expr=String(p.cotation||'').toUpperCase().replace(/,([0-9])/g,'.$1');
+  const re=/\b(AMI|AMX|BSA|BSB|BSC|BSI)\s*(\d+(?:\.\d+)?)?/g;
+  let match,total=0,found=false;
+  while((match=re.exec(expr))!==null){found=true;total+=(Number(match[2]||1))*Number(rates[match[1]]||0);}
+  return found?Math.round(total*100)/100:Number(p.value||0);
+}
+function currentISODate(){return `${yearSelect.value}-${String(MONTHS.indexOf(monthSelect.value)+1).padStart(2,'0')}-${String(Number(daySelect.value)).padStart(2,'0')}`;}
+function activeOnDate(p,date){return !p.closedOn || date<=p.closedOn;}
 function patients(){
   if(!state._patients){
     state._patients = basePatients();
@@ -75,7 +87,7 @@ function fillDays(){
 function current(){return ensureDay(monthLabel(), daySelect.value);}
 
 function careCount(day){return patients().filter((p,i)=>isChecked(day,p,i)).length;}
-function careTotal(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i)?Number(p.value):0),0);}
+function careTotal(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i)?patientValue(p):0),0);}
 function nightCount(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i) && !!day.night[p.id] ? 1 : 0),0);}
 function passageCount(day){return patients().reduce((s,p,i)=>s+(isChecked(day,p,i) && !day.skipPassage[p.id] ? 1 : 0),0);}
 function parts(day){
@@ -91,6 +103,7 @@ function parts(day){
 function renderPatients(day){
   patientsList.innerHTML='';
   patients().forEach((p,i)=>{
+    if(!activeOnDate(p,currentISODate())) return;
     const row=document.createElement('div');row.className='patient';
     const c=document.createElement('input');c.type='checkbox';c.checked=isChecked(day,p,i);
     const txt=document.createElement('div');
@@ -111,12 +124,15 @@ function renderPatients(day){
       else { night.disabled=false; skip.disabled=false; }
       save();renderTotals();renderMonth();
     });
-    const pr=document.createElement('div');pr.className='price';pr.textContent=money(Number(p.value));
+    const pr=document.createElement('div');pr.className='price';pr.textContent=money(patientValue(p));
     const edit=document.createElement('button');edit.className='edit-patient';edit.type='button';edit.title='Modifier le patient';edit.setAttribute('aria-label',`Modifier ${p.name}`);edit.textContent='✏️';
     edit.addEventListener('click',()=>editPatient(p.id));
     const del=document.createElement('button');del.className='delete-patient';del.type='button';del.title='Supprimer';del.textContent='🗑';
     del.addEventListener('click',()=>deletePatient(p.id,p.name));
-    row.append(c,txt,nightWrap,skipWrap,pr,edit,del);patientsList.appendChild(row);
+    const up=document.createElement('button');up.className='order-patient';up.type='button';up.textContent='↑';up.title='Monter dans la liste';up.disabled=i===0;up.addEventListener('click',()=>movePatient(p.id,-1));
+    const down=document.createElement('button');down.className='order-patient';down.type='button';down.textContent='↓';down.title='Descendre dans la liste';down.disabled=i===patients().length-1;down.addEventListener('click',()=>movePatient(p.id,1));
+    const close=document.createElement('button');close.className='close-patient';close.type='button';close.textContent='📅';close.title='Clôturer le patient';close.addEventListener('click',()=>closePatient(p.id));
+    row.append(c,txt,nightWrap,skipWrap,pr,up,down,edit,close,del);patientsList.appendChild(row);
   });
 }
 function renderTotals(){
@@ -181,6 +197,7 @@ document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>
 }));
 
 // Gestion patients
+$('#settingsRates').addEventListener('click',configureRates);
 $('#showAddPatient').addEventListener('click',()=>$('#addPatientForm').hidden=false);
 $('#cancelAddPatient').addEventListener('click',()=>$('#addPatientForm').hidden=true);
 $('#addPatient').addEventListener('click',()=>{
@@ -188,7 +205,8 @@ $('#addPatient').addEventListener('click',()=>{
   const value=parseFloat($('#newPatientValue').value.replace(',','.'));
   const cotation=$('#newPatientCotation').value.trim();
   if(!name || Number.isNaN(value)){ alert('Indique au minimum un nom et une valeur valide.'); return; }
-  patients().push({id:`custom-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name,value,cotation});
+  const patient={id:`custom-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name,value,cotation};
+  patient.value=patientValue(patient); patients().push(patient);
   $('#newPatientName').value=''; $('#newPatientValue').value=''; $('#newPatientCotation').value='';
   $('#addPatientForm').hidden=true; save(); render();
 });
@@ -209,8 +227,33 @@ function editPatient(id){
   p.name=cleanName;
   p.value=value;
   p.cotation=cotation.trim();
+  p.value=patientValue(p);
   save();
   render();
+}
+function movePatient(id,delta){
+  const list=patients(), from=list.findIndex(p=>p.id===id), to=from+delta;
+  if(from<0||to<0||to>=list.length)return;
+  [list[from],list[to]]=[list[to],list[from]];save();render();
+}
+function closePatient(id){
+  const p=patients().find(x=>x.id===id);if(!p)return;
+  const date=prompt(`Date de clôture de ${p.name} (AAAA-MM-JJ). Visible jusqu'à cette date.`,p.closedOn||currentISODate());
+  if(date===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date))){alert('Date invalide. Format attendu : AAAA-MM-JJ.');return;}
+  p.closedOn=date;save();render();
+}
+function configureRates(){
+  const rates=cotationRates();
+  for(const code of ['AMI','BSA','BSB','BSC','BSI','AMX']){
+    const raw=prompt(`Valeur unitaire de ${code} (€) :`,String(rates[code]).replace('.',','));
+    if(raw===null)return;
+    const val=Number(raw.trim().replace(',','.'));
+    if(!Number.isFinite(val)||val<0){alert('Valeur invalide.');return;}
+    rates[code]=val;
+  }
+  state._cotationRates=rates;save();render();
+  alert('Valeurs enregistrées. Les cotations reconnues sont recalculées automatiquement.');
 }
 function deletePatient(id,name){
   if(!confirm(`Supprimer ${name} de la liste des patients ?`)) return;
@@ -237,8 +280,8 @@ function exportExcel(){
     if(!hasData) continue;
     ps.forEach((p,i)=>{
       if(isChecked(day,p,i)){
-        counts[i]++; totals[i]+=Number(p.value);
-        detailedRows.push(`<Row>${cell(d,'Number')}${cell('Soin')}${cell(p.name)}${cell(p.cotation||'')}${cell(1,'Number')}${cell(Number(p.value),'Number','Money')}${cell(Number(p.value),'Number','Money')}</Row>`);
+        counts[i]++; totals[i]+=patientValue(p);
+        detailedRows.push(`<Row>${cell(d,'Number')}${cell('Soin')}${cell(p.name)}${cell(p.cotation||'')}${cell(1,'Number')}${cell(patientValue(p),'Number','Money')}${cell(patientValue(p),'Number','Money')}</Row>`);
         if(day.night[p.id]){
           detailedRows.push(`<Row>${cell(d,'Number')}${cell('Majoration nuit')}${cell(p.name)}${cell('9,15 €')}${cell(1,'Number')}${cell(9.15,'Number','Money')}${cell(9.15,'Number','Money')}</Row>`);
         }
@@ -263,7 +306,7 @@ function exportExcel(){
   m.rows.filter(r=>r.count>0||r.dim>0||r.bs>0).forEach(r=>{ rows1 += `<Row>${cell(r.d,'Number')}${cell(r.care,'Number','Money')}${cell(r.passages,'Number','Money')}${cell(r.night,'Number','Money')}${cell(r.dim,'Number','Money')}${cell(r.bs,'Number','Money')}${cell(r.total,'Number','Money')}</Row>`; });
 
   let rows2 = `<Row>${cell('Patient','String','Header')}${cell('Cotation','String','Header')}${cell('Valeur','String','Header')}${cell('Nombre de jours','String','Header')}${cell('Total soins','String','Header')}</Row>`;
-  ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(Number(p.value),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });
+  ps.forEach((p,i)=>{ rows2 += `<Row>${cell(p.name)}${cell(p.cotation||'')}${cell(patientValue(p),'Number','Money')}${cell(counts[i],'Number')}${cell(totals[i],'Number','Money')}</Row>`; });
   const detailDays = Array.from({length:daysInMonth(month)},(_,i)=>i+1)
     .filter(d=>{
       const day=ensureDay(month,String(d));
@@ -278,7 +321,7 @@ function exportExcel(){
       const day=ensureDay(month,String(d));
       return isChecked(day,p,i)?cell('✓','String','Check'):'<Cell><Data ss:Type="String"></Data></Cell>';
     }).join('');
-    detailRows.push(`<Row>${cell(p.name)}${cell(Number(p.value),'Number','Money')}${cell(p.cotation||'')}${values}${cell(daysWithCare.length,'Number')}${cell(totals[i],'Number','Money')}</Row>`);
+    detailRows.push(`<Row>${cell(p.name)}${cell(patientValue(p),'Number','Money')}${cell(p.cotation||'')}${values}${cell(daysWithCare.length,'Number')}${cell(totals[i],'Number','Money')}</Row>`);
     if(daysWithCare.some(d=>!!ensureDay(month,String(d)).night[p.id])){
       // Night surcharge is reported in the summary below, not duplicated in patient care totals.
     }

@@ -54,3 +54,5 @@ footer{text-align:center;padding:20px;color:#73827f;font-size:.78rem}
 .passage-option input:disabled{opacity:.45}
 @media(min-width:701px){.patient{grid-template-columns:auto minmax(120px,1fr) auto auto auto auto auto}}
 @media(max-width:700px){.patient{grid-template-columns:auto 1fr auto auto}.night-option,.passage-option{grid-column:2/5;grid-row:auto;justify-self:start}.patient .price{grid-column:2;grid-row:1}.edit-patient{grid-column:3;grid-row:1}.delete-patient{grid-column:4;grid-row:1}}
+
+.order-patient,.close-patient{border:0;background:#edf5f4;color:#28504c;min-width:30px;height:32px;border-radius:8px;font-weight:800}.order-patient:disabled{opacity:.3}.close-patient{background:#fff4d8}.section-title{gap:8px;flex-wrap:wrap}

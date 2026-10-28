@@ -1,4 +1,4 @@
-const CACHE='idel-pwa-v16';
+const CACHE='idel-pwa-v17';
 const ASSETS=[
   './',
   './index.html',
